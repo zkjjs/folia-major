@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: folia-ios-${{ github.ref }}
+  group: folia-ios-${{ github.sha }}
   cancel-in-progress: true
 jobs:
   core-tests:
