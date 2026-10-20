@@ -65,7 +65,7 @@ jobs:
               raise SystemExit('No iPhone simulator available for lyric integration test')
           devices.sort(key=lambda pair: (pair[0], pair[1]['name']), reverse=True)
           with open(os.environ['GITHUB_ENV'], 'a') as env:
-              env.write('SIMULATOR_ID=' + devices[0][1]['udid'] + '\\n')
+              env.write('SIMULATOR_ID=' + devices[0][1]['udid'] + '\n')
           print(devices[0][1]['name'])
           PY
       - name: Test actual WebKit lyric bundle
