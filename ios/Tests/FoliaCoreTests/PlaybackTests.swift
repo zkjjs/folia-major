@@ -25,6 +25,6 @@ final class PlaybackTests: XCTestCase {
         XCTAssertThrowsError(try ServerAddress.validate("http://music.example.com"))
         XCTAssertThrowsError(try ServerAddress.validate("file:///etc/passwd"))
         XCTAssertThrowsError(try ServerAddress.validate("https://user:pass@music.example.com"))
-        XCTAssertEqual(try ServerAddress.validate("https://music.example.com/music/").path, "/music/")
+        XCTAssertEqual(try ServerAddress.validate("https://music.example.com/music/").absoluteString, "https://music.example.com/music/")
     }
 }
