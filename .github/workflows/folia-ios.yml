@@ -51,6 +51,11 @@ jobs:
           node ios/web/packageAssets.mjs
         env:
           NODE_OPTIONS: --max-old-space-size=6144
+      - name: Check offline renderer in clean browser
+        timeout-minutes: 3
+        run: |
+          npx playwright install chromium
+          node ios/web/smoke.mjs
       - name: Generate Xcode project
         run: |
           brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
