@@ -70,14 +70,15 @@ struct LyricsWebView: UIViewRepresentable {
             }
             guard let data = try? JSONSerialization.data(withJSONObject: snapshot),
                   let json = String(data: data, encoding: .utf8) else { return }
-            webView.callAsyncJavaScript("if (!window.FoliaNative) return false; window.FoliaNative.receive(JSON.parse(snapshot)); return true;",
-                arguments: ["snapshot": json], in: nil, contentWorld: .page) { [weak self] result in
-                    switch result {
-                    case .failure: Task { @MainActor in self?.lastMetadata = "" }
-                    case .success(let value):
-                        if value as? Bool != true { Task { @MainActor in self?.lastMetadata = "" } }
-                    }
-                }
+            Task { @MainActor [weak self, weak webView] in
+                guard let webView else { return }
+                do {
+                    let value = try await webView.callAsyncJavaScript(
+                        "if (!window.FoliaNative) return false; window.FoliaNative.receive(JSON.parse(snapshot)); return true;",
+                        arguments: ["snapshot": json], in: nil, contentWorld: .page)
+                    if value as? Bool != true { self?.lastMetadata = "" }
+                } catch { self?.lastMetadata = "" }
+            }
         }
     }
 }

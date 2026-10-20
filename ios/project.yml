@@ -37,8 +37,23 @@ targets:
         UIFileSharingEnabled: YES
         NSLocalNetworkUsageDescription: 连接你家中或局域网中的 Navidrome 音乐服务器。
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+  FoliaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/FoliaAppTests
+    dependencies:
+      - target: Folia
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Folia.app/Folia"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   Folia:
     build:
       targets:
         Folia: all
+    test:
+      targets:
+        - FoliaTests

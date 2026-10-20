@@ -55,6 +55,23 @@ jobs:
         run: |
           brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
           xcodegen generate --spec ios/project.yml
+      - name: Select iPhone simulator
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          data = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '--json'], text=True))
+          devices = [(runtime, item) for runtime, group in data['devices'].items() if 'iOS' in runtime for item in group if item.get('isAvailable') and item['name'].startswith('iPhone')]
+          if not devices:
+              raise SystemExit('No iPhone simulator available for lyric integration test')
+          devices.sort(key=lambda pair: (pair[0], pair[1]['name']), reverse=True)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('SIMULATOR_ID=' + devices[0][1]['udid'] + '\\n')
+          print(devices[0][1]['name'])
+          PY
+      - name: Test actual WebKit lyric bundle
+        run: |
+          set -o pipefail
+          xcodebuild test -project ios/Folia.xcodeproj -scheme Folia -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath ios/test-build -resultBundlePath ios/LyricsTests.xcresult CODE_SIGNING_ALLOWED=NO | tee ios/integration.log
       - name: Compile unsigned iPhone application
         run: |
           set -o pipefail
@@ -74,4 +91,7 @@ jobs:
         if: failure()
         with:
           name: Folia-build-log
-          path: ios/build.log
+          path: |
+            ios/build.log
+            ios/integration.log
+            ios/LyricsTests.xcresult
