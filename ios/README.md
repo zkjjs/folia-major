@@ -20,3 +20,10 @@ SwiftUI 原生音乐库和液态玻璃底栏；AVPlayer 负责本地及 Navidrom
 - 环境裁定：本地执行环境不可用，使用独立远端分支和 GitHub Actions 进行构建验证。
 - 第一轮：先提交核心行为测试和 CI，取得测试结果后实现核心及应用。
 - 不将编译成功等同于已在 iOS 27 真机验证。
+
+## 当前验证记录
+- 核心测试 RED：39472443085，缺少 Track/PlaybackRules/ServerAddress。
+- 核心测试修订：Foundation URL.path 会规范化尾随斜杠；改用 absoluteString 检验服务器完整地址保留，不改变验证逻辑。
+- 核心测试 GREEN：39472937315，4 项测试通过。
+- 应用代码与原版歌词桥接已接入；等待 Web 构建与 iphoneos 编译。
+- 真实设备测试尚未执行。
