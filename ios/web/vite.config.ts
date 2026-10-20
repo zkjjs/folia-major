@@ -6,6 +6,7 @@ import { traditionalLocalePlugin } from '../../dev/i18n/traditionalLocalePlugin.
 export default defineConfig({
     plugins: [react(), traditionalLocalePlugin()],
     define: {
+        'process.env.NODE_ENV': JSON.stringify('production'),
         __COMMIT_HASH__: JSON.stringify('ios'),
         __GIT_BRANCH__: JSON.stringify('codex/folia-ios'),
         __BUILD_REPO__: JSON.stringify('zkjjs/folia-major'),
