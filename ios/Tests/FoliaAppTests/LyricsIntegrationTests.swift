@@ -44,7 +44,7 @@ import UIKit
             arguments: ["snapshot": json], in: nil, contentWorld: .page)
         let first = try await view.callAsyncJavaScript("""
             for (let i = 0; i < 50; i++) {
-                if (document.body.textContent.includes('First')) return true;
+                if (document.getElementById('root').textContent.includes('First')) return true;
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
             return false;
@@ -55,7 +55,7 @@ import UIKit
             await new Promise(resolve => setTimeout(resolve, 100));
             window.FoliaNative.receive({id:'test-track',time:2.5,duration:10,playing:false,active:true,dark:true});
             for (let i = 0; i < 50; i++) {
-                if (document.body.textContent.includes('Second')) return true;
+                if (document.getElementById('root').textContent.includes('Second')) return true;
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
             return false;
