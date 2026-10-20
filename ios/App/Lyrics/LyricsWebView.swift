@@ -54,6 +54,9 @@ struct LyricsWebView: UIViewRepresentable {
             if body["type"] as? String == "ready" {
                 ready = true; lastMetadata = ""; send(); return
             }
+            if body["type"] as? String == "error", body["detail"] != nil {
+                player.error = "歌词页面启动失败，请使用最新构建。"; return
+            }
             guard body["id"] as? String == player.current?.id else { return }
             if body["type"] as? String == "seek", let value = body["time"] as? Double, value.isFinite { player.seek(value) }
             if body["type"] as? String == "error" { player.error = "歌词加载失败，请检查歌词文件格式。" }

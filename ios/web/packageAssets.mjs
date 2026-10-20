@@ -8,4 +8,4 @@ const styles = fs.readdirSync(root).filter(name => name.endsWith('.css'))
 fs.mkdirSync('ios/Resources', { recursive: true });
 fs.writeFileSync('ios/Resources/lyrics.html',
     '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><style>'
-    + styles + '</style></head><body><div id="root"></div><script>' + script + '</script></body></html>');
+    + styles + '</style></head><body><div id="root"></div><script>window.addEventListener("error", function(event) { window.webkit?.messageHandlers.folia.postMessage({type:"error", detail:event.message}); });window.addEventListener("unhandledrejection", function(event) { window.webkit?.messageHandlers.folia.postMessage({type:"error", detail:String(event.reason)}); });</script><script>' + script + '</script></body></html>');

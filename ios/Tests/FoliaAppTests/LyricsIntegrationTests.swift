@@ -7,14 +7,20 @@ import UIKit
     final class PageMessages: NSObject, WKScriptMessageHandler {
         let ready: XCTestExpectation
         var receivedReady = false
+        var completedWait = false
         var errors: [String] = []
         init(ready: XCTestExpectation) { self.ready = ready }
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let body = message.body as? [String: Any] else { return }
             if body["type"] as? String == "ready", !receivedReady {
-                receivedReady = true; ready.fulfill()
+                receivedReady = true
+                if !completedWait { completedWait = true; ready.fulfill() }
             }
-            if body["type"] as? String == "error" { errors.append("renderer error") }
+            if body["type"] as? String == "error" {
+                let detail = body["detail"] as? String ?? "renderer error"
+                errors.append(detail); print("LYRICS_JS_ERROR: " + detail)
+                if !completedWait { completedWait = true; ready.fulfill() }
+            }
         }
     }
     func testBundledLyricsBecomeReadySeekAndResumeOffline() async throws {
@@ -39,6 +45,8 @@ import UIKit
         let snapshot: [String: Any] = ["id": "test-track", "time": 0.5, "duration": 10,
             "playing": false, "active": true, "dark": true, "title": "Test", "artist": "Test",
             "lyric": "[00:00.00]First test line\n[00:02.00]Second test line"]
+        XCTAssertTrue(messages.errors.isEmpty, messages.errors.joined(separator: "\n"))
+        guard messages.receivedReady else { XCTFail("Lyric startup failed before bridge readiness"); return }
         let json = String(data: try JSONSerialization.data(withJSONObject: snapshot), encoding: .utf8)!
         _ = try await view.callAsyncJavaScript("window.FoliaNative.receive(JSON.parse(snapshot));",
             arguments: ["snapshot": json], in: nil, contentWorld: .page)
