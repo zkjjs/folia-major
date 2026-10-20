@@ -68,14 +68,15 @@ jobs:
               env.write('SIMULATOR_ID=' + devices[0][1]['udid'] + '\n')
           print(devices[0][1]['name'])
           PY
-      - name: Test actual WebKit lyric bundle
-        run: |
-          set -o pipefail
-          xcodebuild test -project ios/Folia.xcodeproj -scheme Folia -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath ios/test-build -resultBundlePath ios/LyricsTests.xcresult CODE_SIGNING_ALLOWED=NO | tee ios/integration.log
       - name: Compile unsigned iPhone application
         run: |
           set -o pipefail
           xcodebuild -project ios/Folia.xcodeproj -scheme Folia -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build | tee ios/build.log
+      - name: Test actual WebKit lyric bundle
+        timeout-minutes: 6
+        run: |
+          set -o pipefail
+          xcodebuild test -project ios/Folia.xcodeproj -scheme Folia -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath ios/test-build -resultBundlePath ios/LyricsTests.xcresult CODE_SIGNING_ALLOWED=NO | tee ios/integration.log
       - name: Package IPA
         run: |
           mkdir -p ios/artifact/Payload
