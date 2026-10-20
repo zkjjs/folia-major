@@ -20,7 +20,7 @@ jobs:
         run: swift test --package-path ios
   build-ipa:
     needs: core-tests
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
