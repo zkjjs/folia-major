@@ -24,3 +24,15 @@ public enum ServerAddress {
         return url
     }
 }
+
+public extension PlaybackRules {
+    static func queueByAttachingLyrics(_ text: String, to id: String, in tracks: [Track]) -> [Track] {
+        tracks.map { track in
+            guard track.id == id else { return track }
+            var updated = track; updated.lyric = text; return updated
+        }
+    }
+    static func needsServerReset(_ tracks: [Track]) -> Bool {
+        tracks.contains(where: { $0.source == .navidrome })
+    }
+}

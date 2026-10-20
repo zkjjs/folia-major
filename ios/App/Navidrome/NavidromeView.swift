@@ -17,7 +17,7 @@ struct NavidromeView: View {
                         TextField("用户名", text: $username).textInputAutocapitalization(.never).autocorrectionDisabled()
                         SecureField("密码", text: $password)
                         Button("连接服务器") {
-                            Task { await server.connect(address: address, username: username, password: password); if server.connected { password = "" } }
+                            Task { player.resetServerSession(); await server.connect(address: address, username: username, password: password); if server.connected { password = "" } }
                         }.disabled(server.loading)
                         Text("填写 HTTPS 地址，支持带路径的反向代理。登录信息保存在本机钥匙串。").font(.footnote).foregroundStyle(.secondary)
                     }
@@ -42,7 +42,7 @@ struct NavidromeView: View {
             .searchable(text: $search, prompt: "搜索已加载的歌曲")
             .toolbar {
                 if server.connected {
-                    Button("断开") { player.pause(); server.disconnect() }
+                    Button("断开") { player.resetServerSession(); server.disconnect() }
                 }
             }
             .task {

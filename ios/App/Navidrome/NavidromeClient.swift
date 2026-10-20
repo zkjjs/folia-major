@@ -115,6 +115,9 @@ import FoliaCore
         } catch { if version == generation { self.error = error.localizedDescription } }
     }
     func lyrics(for track: Track) async -> String? {
+        if let body = try? await request("getLyricsBySongId", params: ["id": track.location]),
+           let data = try? JSONSerialization.data(withJSONObject: body),
+           let text = try? ServerLyrics.text(from: data), !text.isEmpty { return text }
         guard let body = try? await request("getLyrics", params: ["artist": track.artist, "title": track.title]),
               let lyrics = body["lyrics"] as? [String: Any] else { return nil }
         return lyrics["value"] as? String

@@ -43,16 +43,18 @@ struct LyricsWebView: UIViewRepresentable {
         private var lastMetadata = ""
         init(player: PlayerStore) { self.player = player }
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            ready = true; lastMetadata = ""; send()
+            // React announces readiness after installing its receive handler.
         }
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             decisionHandler(navigationAction.request.url?.isFileURL == true ? .allow : .cancel)
         }
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-            guard message.frameInfo.isMainFrame,
-                  let body = message.body as? [String: Any],
-                  body["id"] as? String == player.current?.id else { return }
+            guard message.frameInfo.isMainFrame, let body = message.body as? [String: Any] else { return }
+            if body["type"] as? String == "ready" {
+                ready = true; lastMetadata = ""; send(); return
+            }
+            guard body["id"] as? String == player.current?.id else { return }
             if body["type"] as? String == "seek", let value = body["time"] as? Double, value.isFinite { player.seek(value) }
             if body["type"] as? String == "error" { player.error = "歌词加载失败，请检查歌词文件格式。" }
         }
@@ -68,9 +70,13 @@ struct LyricsWebView: UIViewRepresentable {
             }
             guard let data = try? JSONSerialization.data(withJSONObject: snapshot),
                   let json = String(data: data, encoding: .utf8) else { return }
-            webView.callAsyncJavaScript("window.FoliaNative?.receive(JSON.parse(snapshot));",
+            webView.callAsyncJavaScript("if (!window.FoliaNative) return false; window.FoliaNative.receive(JSON.parse(snapshot)); return true;",
                 arguments: ["snapshot": json], in: nil, contentWorld: .page) { [weak self] result in
-                    if case .failure = result { Task { @MainActor in self?.lastMetadata = "" } }
+                    switch result {
+                    case .failure: Task { @MainActor in self?.lastMetadata = "" }
+                    case .success(let value):
+                        if value as? Bool != true { Task { @MainActor in self?.lastMetadata = "" } }
+                    }
                 }
         }
     }

@@ -3,8 +3,6 @@ on:
   push:
     branches: [codex/folia-ios]
     paths: ['ios/**', '.github/workflows/folia-ios.yml']
-  pull_request:
-    paths: ['ios/**', '.github/workflows/folia-ios.yml']
   workflow_dispatch:
 permissions:
   contents: read

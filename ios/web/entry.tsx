@@ -35,6 +35,7 @@ function LyricPage() {
     const [metadata, setMetadata] = useState({ id: '', title: '', artist: '', text: '', lines: [] as Line[] });
     const [lineIndex, setLineIndex] = useState(-1);
     const [paused, setPaused] = useState(true);
+    const [active, setActive] = useState(true);
     const latest = useRef<Snapshot | null>(null);
     const lines = useRef<Line[]>([]);
     const anchor = useRef(0);
@@ -78,17 +79,19 @@ function LyricPage() {
                 }
                 setClock(snapshot.time);
                 setPaused(!snapshot.playing || !snapshot.active);
+                setActive(snapshot.active);
                 if (frame.current !== null) cancelAnimationFrame(frame.current);
                 frame.current = snapshot.active && snapshot.playing ? requestAnimationFrame(tick) : null;
             },
         };
+        window.webkit?.messageHandlers.folia.postMessage({ type: 'ready' });
         return () => {
             if (frame.current !== null) cancelAnimationFrame(frame.current);
         };
     }, []);
     const untimed = metadata.text.trim().length > 0 && metadata.lines.length === 0;
     return <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(ellipse at 25% 20%, #2b245b, #111329 60%, #080910)', color: 'white' }}>
-        {untimed
+        {!active ? null : untimed
             ? <div style={{ position: 'absolute', inset: '80px 24px 130px', overflowY: 'auto', whiteSpace: 'pre-wrap', lineHeight: 2.1, textAlign: 'center', fontSize: 23 }}>{metadata.text}</div>
             : <Visualizer key={metadata.id} currentTime={clock} currentLineIndex={lineIndex}
                 lines={metadata.lines} theme={theme} audioPower={zero} audioBands={bands}

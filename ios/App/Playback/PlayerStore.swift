@@ -97,6 +97,7 @@ import FoliaCore
         loadTask?.cancel()
         audio.pause(); audio.replaceCurrentItem(with: nil)
         statusObservation = nil; time = 0; duration = 0; lyrics = ""
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         guard let track = current else { return }
         do {
             let url: URL
@@ -160,8 +161,16 @@ import FoliaCore
         guard let index, index > 0 else { seek(0); return }
         self.index = index - 1; loadCurrent()
     }
+    func resetServerSession() {
+        guard PlaybackRules.needsServerReset(queue) else { return }
+        loadTask?.cancel(); audio.pause(); audio.replaceCurrentItem(with: nil)
+        statusObservation = nil; queue = []; index = nil; time = 0; duration = 0
+        lyrics = ""; playing = false
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+    }
     func setLyrics(_ text: String) {
         lyrics = text
+        if let id = current?.id { queue = PlaybackRules.queueByAttachingLyrics(text, to: id, in: queue) }
         if let current, current.source == .local { library?.attachLyrics(text, to: current.id) }
     }
     func artwork(for track: Track) async -> UIImage? {

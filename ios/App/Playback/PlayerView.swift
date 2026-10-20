@@ -7,6 +7,7 @@ struct PlayerView: View {
     @State private var showLyrics = false
     @State private var showQueue = false
     @State private var importLyrics = false
+    @State private var lyricTargetID: String?
     @State private var dragging = false
     @State private var draftTime = 0.0
     var body: some View {
@@ -42,7 +43,7 @@ struct PlayerView: View {
                             Button("队列", systemImage: "list.bullet") { showQueue = true }
                         }.buttonStyle(.glass).padding(.top, 10)
                         if player.lyrics.isEmpty {
-                            Button("导入歌词", systemImage: "doc.badge.plus") { importLyrics = true }
+                            Button("导入歌词", systemImage: "doc.badge.plus") { beginLyricsImport() }
                                 .font(.subheadline)
                             Text("支持 LRC、TTML、VTT；导入歌词只关联当前歌曲。")
                                 .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -57,7 +58,7 @@ struct PlayerView: View {
                     Button("关闭", systemImage: "chevron.down") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu("更多", systemImage: "ellipsis") { Button("导入或替换歌词") { importLyrics = true } }
+                    Menu("更多", systemImage: "ellipsis") { Button("导入或替换歌词") { beginLyricsImport() } }
                 }
             }
         }
@@ -78,7 +79,7 @@ struct PlayerView: View {
             }
         }
         .fileImporter(isPresented: $importLyrics, allowedContentTypes: [.plainText, .xml, .data]) { result in
-            let targetID = player.current?.id
+            let targetID = lyricTargetID
             do {
                 let url = try result.get()
                 let granted = url.startAccessingSecurityScopedResource()
@@ -90,6 +91,10 @@ struct PlayerView: View {
                 player.setLyrics(text)
             } catch { player.error = "读取歌词失败：" + error.localizedDescription }
         }
+    }
+    private func beginLyricsImport() {
+        lyricTargetID = player.current?.id
+        importLyrics = true
     }
     private func clock(_ value: Double) -> String {
         let seconds = value.isFinite ? Int(max(0, min(value, 359999))) : 0
