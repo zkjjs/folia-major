@@ -1,0 +1,59 @@
+name: Folia
+options:
+  bundleIdPrefix: com.zkjjs
+  deploymentTarget:
+    iOS: '26.0'
+packages:
+  FoliaCore:
+    path: .
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    TARGETED_DEVICE_FAMILY: '1,2'
+    CODE_SIGNING_ALLOWED: NO
+    CURRENT_PROJECT_VERSION: '1'
+    MARKETING_VERSION: '0.1.0'
+targets:
+  Folia:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Resources
+        buildPhase: resources
+    dependencies:
+      - package: FoliaCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zkjjs.folia
+        GENERATE_INFOPLIST_FILE: YES
+    info:
+      path: Generated/Info.plist
+      properties:
+        CFBundleDisplayName: Folia
+        UILaunchScreen: {}
+        UIBackgroundModes: [audio]
+        LSSupportsOpeningDocumentsInPlace: YES
+        UIFileSharingEnabled: YES
+        NSLocalNetworkUsageDescription: 连接你家中或局域网中的 Navidrome 音乐服务器。
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+  FoliaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/FoliaAppTests
+    dependencies:
+      - target: Folia
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Folia.app/Folia"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  Folia:
+    build:
+      targets:
+        Folia: all
+    test:
+      targets:
+        - FoliaTests

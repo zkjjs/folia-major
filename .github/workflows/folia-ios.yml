@@ -1,0 +1,103 @@
+name: Folia iOS
+on:
+  push:
+    branches: [codex/folia-ios]
+    paths: ['ios/**', '.github/workflows/folia-ios.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: folia-ios-${{ github.sha }}
+  cancel-in-progress: true
+jobs:
+  core-tests:
+    runs-on: ubuntu-latest
+    container: swift:6.1
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test playback and library contracts
+        run: swift test --package-path ios
+  build-ipa:
+    needs: core-tests
+    runs-on: xcode-27
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest installed Xcode
+        run: |
+          python3 - <<'PY'
+          import glob, os, subprocess
+          candidates = glob.glob('/Applications/Xcode*.app')
+          def version(p):
+              value = subprocess.check_output(['defaults', 'read', p + '/Contents/Info', 'CFBundleShortVersionString'], text=True).strip()
+              return tuple(int(v) for v in value.split('.') if v.isdigit())
+          selected = max(candidates, key=version)
+          subprocess.run(['sudo', 'xcode-select', '-s', selected + '/Contents/Developer'], check=True)
+          subprocess.run(['xcodebuild', '-version'], check=True)
+          PY
+          xcrun --sdk iphoneos --show-sdk-version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install web dependencies
+        run: npm ci --ignore-scripts
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      - name: Bundle original Folia lyric renderer
+        run: |
+          npx vite build --config ios/web/vite.config.ts
+          node ios/web/packageAssets.mjs
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+      - name: Check offline renderer in clean browser
+        timeout-minutes: 3
+        run: |
+          npx playwright install chromium
+          node ios/web/smoke.mjs
+      - name: Generate Xcode project
+        run: |
+          brew list xcodegen >/dev/null 2>&1 || brew install xcodegen
+          xcodegen generate --spec ios/project.yml
+      - name: Select iPhone simulator
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          data = json.loads(subprocess.check_output(['xcrun', 'simctl', 'list', 'devices', 'available', '--json'], text=True))
+          devices = [(runtime, item) for runtime, group in data['devices'].items() if 'iOS' in runtime for item in group if item.get('isAvailable') and item['name'].startswith('iPhone')]
+          if not devices:
+              raise SystemExit('No iPhone simulator available for lyric integration test')
+          devices.sort(key=lambda pair: (pair[0], pair[1]['name']), reverse=True)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('SIMULATOR_ID=' + devices[0][1]['udid'] + '\n')
+          print(devices[0][1]['name'])
+          PY
+      - name: Compile unsigned iPhone application
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/Folia.xcodeproj -scheme Folia -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build | tee ios/build.log
+      - name: Package IPA
+        run: |
+          mkdir -p ios/artifact/Payload
+          cp -R ios/build/Build/Products/Release-iphoneos/Folia.app ios/artifact/Payload/
+          cd ios/artifact
+          /usr/bin/zip -qry Folia-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Folia-unsigned
+          path: ios/artifact/Folia-unsigned.ipa
+          if-no-files-found: error
+      - name: Test actual WebKit lyric bundle
+        timeout-minutes: 6
+        run: |
+          set -o pipefail
+          xcodebuild test -project ios/Folia.xcodeproj -scheme Folia -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -derivedDataPath ios/test-build -resultBundlePath ios/LyricsTests.xcresult CODE_SIGNING_ALLOWED=NO | tee ios/integration.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: Folia-build-log
+          path: |
+            ios/build.log
+            ios/integration.log
+            ios/LyricsTests.xcresult
