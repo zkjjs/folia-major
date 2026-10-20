@@ -1,0 +1,21 @@
+name: Folia iOS
+on:
+  push:
+    branches: [codex/folia-ios]
+    paths: ['ios/**', '.github/workflows/folia-ios.yml']
+  pull_request:
+    paths: ['ios/**', '.github/workflows/folia-ios.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: folia-ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  core-tests:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test playback and library contracts
+        run: swift test --package-path ios
